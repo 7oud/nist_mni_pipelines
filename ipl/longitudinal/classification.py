@@ -65,6 +65,7 @@ def run_bison_wmh(wmh_bison_input,bison_input,wmh_out,cls_out,
                 minc.calc([minc.tmp('cls.mnc'),wmh_out],
                           'A[1]>0.5?3:A[0]',cls_out,labels=True,datatype='-byte')  
 
+
 def pipeline_classification(patient, tp):
     if os.path.exists(patient[tp].stx2_mnc['classification']) \
         and os.path.exists(patient[tp].qc_jpg['classification']):
@@ -162,7 +163,6 @@ def classification_v10(patient, tp):
                         bison_atlas_pfx=patient.bison_atlas_pfx,
                         bison_method=patient.bison_method,
                   ))
-
     else: # fall back to the old method
         with mincTools() as minc:  # TODO: convert to using mincTools calls
             scans= [patient[tp].stx2_mnc['t1']]

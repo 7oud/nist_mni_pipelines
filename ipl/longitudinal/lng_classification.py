@@ -27,7 +27,6 @@ def pipeline_lng_classification(patient):
         return 1
 
     # make a vector with all output images
-
     allDone = True
     for (i, tp) in patient.items():
         if not os.path.exists(tp.stx2_mnc['lng_classification']) \
@@ -39,7 +38,6 @@ def pipeline_lng_classification(patient):
         return 1
 
     lng_classification_v10(patient) 
-
 
 
 def create_prior(priors,masks,outs,fwhm=8.0):
@@ -220,7 +218,6 @@ def lng_classification_v10(patient):
             minc.command(['mincmath', '-add', tmp_gm, tmp_csf, tmp_black],inputs=[tmp_gm, tmp_csf],outputs=[tmp_black])
 
             # 3. Do gc csf vs. gm+wm
-
             tmp_tissue = tmpdir + 'tmp_tissue.mnc'
             minc.command([ 'gcut4D', '-i', ','.join(t1), '-m',masks,
                 '-t', tmp_bright, '-b', tmp_csf,

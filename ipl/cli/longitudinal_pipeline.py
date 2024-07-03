@@ -15,11 +15,11 @@ import argparse
 
 # Generic python functions for scripting
 
-from ipl.longitudinal.general            import *  # functions to call binaries and general functions
-from ipl.longitudinal.patient            import *  # class to store all the data
+from ipl.longitudinal.general import *  # functions to call binaries and general functions
+from ipl.longitudinal.patient import *  # class to store all the data
 
 
-from ipl.minc_tools import mincTools,mincError
+from ipl.minc_tools import mincTools, mincError
 
 from ipl.longitudinal.main import runPipeline
 
@@ -41,13 +41,13 @@ def setup_patient(id, options):
     patient.geo_corr = options.geo
 
     patient.patientdir = options.output + os.sep + patient.id + os.sep
-    os.makedirs(patient.patientdir,exist_ok=True)
+    os.makedirs(patient.patientdir, exist_ok=True)
 
     if options.workdir is None:
         patient.workdir = patient.patientdir + os.sep + 'tmp' + os.sep
-        os.makedirs(patient.workdir,exist_ok=True)
+        os.makedirs(patient.workdir, exist_ok=True)
     else:
-        patient.workdir=options.workdir
+        patient.workdir = options.workdir
 
     if options.manual is not None:
         patient.manualdir = options.manual + os.sep + patient.id + os.sep
@@ -71,15 +71,15 @@ def setup_patient(id, options):
 
     patient.denoise = options.denoise
 
-    patient.mask_n3  = options.mask_n3
-    patient.n4       = options.n4
-    #patient.dolngcls = options.dolngcls
-    patient.dodbm    = options.dodbm
-    patient.dovbm    = options.dovbm
-    #patient.deface   = options.deface
+    patient.mask_n3 = options.mask_n3
+    patient.n4 = options.n4
+    # patient.dolngcls = options.dolngcls
+    patient.dodbm = options.dodbm
+    patient.dovbm = options.dovbm
+    # patient.deface   = options.deface
 
-    patient.mri3T    = options.mri3T
-    patient.fast     = options.fast
+    patient.mri3T = options.mri3T
+    patient.fast = options.fast
     patient.temporalregu = options.temporalregu
     patient.skullreg = options.skullreg
     patient.redskull_onnx = options.redskull_onnx
@@ -92,23 +92,24 @@ def setup_patient(id, options):
     patient.wmh_bison_pfx = options.wmh_bison_pfx
     patient.wmh_bison_atlas_pfx = options.wmh_bison_atlas_pfx
     patient.wmh_bison_method = options.wmh_bison_method
-    patient.threads  = options.threads
-
+    patient.threads = options.threads
 
     patient.large_atrophy = options.large_atrophy
     patient.dobiascorr = options.dobiascorr
-    patient.linreg   = options.linreg
-    patient.rigid    = options.rigid
-    patient.add      = options.add
+    patient.linreg = options.linreg
+    patient.rigid = options.rigid
+    patient.add = options.add
 
-    patient.vbm_options = { 'vbm_fwhm':      options.vbm_blur,
-                                'vbm_resolution':options.vbm_res,
-                                'vbm_nl_level':  options.vbm_nl,
-                                'vbm_nl_method':'minctracc' }
+    patient.vbm_options = {
+        'vbm_fwhm': options.vbm_blur,
+        'vbm_resolution': options.vbm_res,
+        'vbm_nl_level': options.vbm_nl,
+        'vbm_nl_method': 'minctracc',
+    }
 
     patient.nl_step = options.nl_step
 
-    if options.nl_ants :
+    if options.nl_ants:
         patient.nl_method = 'ANTS'
         patient.vbm_options['vbm_nl_method'] = 'ANTS'
 
@@ -118,11 +119,9 @@ def setup_patient(id, options):
     # end of creating a patient
     return patient
 
-def setup_visit(patient,visit,
-                t1=None,t2=None,pd=None,flair=None,
-                age=None,
-                geo_t1=None,geo_t2=None,t2les=None):
-    assert visit not in patient , f' -- ERROR : Timepoint {visit} repeated in patient {patient.id}'
+
+def setup_visit(patient, visit, t1=None, t2=None, pd=None, flair=None, age=None, geo_t1=None, geo_t2=None, t2les=None):
+    assert visit not in patient, f' -- ERROR : Timepoint {visit} repeated in patient {patient.id}'
 
     patient[visit] = TP(visit)  # creating a timepoint for the patient[id]
 
@@ -137,12 +136,12 @@ def setup_visit(patient,visit,
 
     if not os.path.exists(t1):
         raise IplError(f'-- ERROR : Patient {patient.id} Timepoint {visit} missing file:{t1} ')
-    
+
     patient[visit].native['t1'] = t1
 
     if t2 is not None and len(t2) > 0:
         patient[visit].native['t2'] = t2
-    
+
     if pd is not None and len(pd) > 0:
         patient[visit].native['pd'] = pd
 
@@ -162,7 +161,6 @@ def setup_visit(patient,visit,
         patient[visit].native['t2les'] = t2les
 
 
-
 def launchPipeline(options):
     '''
     INPUT: options are the parsed information from the command line
@@ -172,108 +170,78 @@ def launchPipeline(options):
     - Run pipeline in each pickle files
     '''
 
-    _opts    = {}
-
     patients = {}
 
     # load additional steps and store them inside option structure
     # if they are strings
     # otherwise assume they are already loaded properly
-    _add=[]
-    for i,j in enumerate(options.add):
+    _add = []
+    for i, j in enumerate(options.add):
         try:
-            _par=j
+            _par = j
             if isinstance(j, six.string_types):
-                with open(j,'r') as f:
-                    _par=json.load(f)
+                with open(j, 'r') as f:
+                    _par = json.load(f)
             _add.append(_par)
-        except :
-            print("Error loading JSON:{}\n{}".format(j, sys.exc_info()[0]),file=sys.stderr)
+        except:
+            print("Error loading JSON:{}\n{}".format(j, sys.exc_info()[0]), file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             exit(1)
 
-    options.add=_add
+    options.add = _add
 
     os.makedirs(options.output, exist_ok=True)
     options.output = os.path.abspath(options.output) + os.sep  # always use abs paths for sge
     if options.workdir is not None:
         options.workdir = os.path.abspath(options.workdir) + os.sep  # always use abs paths for sge
         if not os.path.exists(options.workdir):
-          os.makedirs(options.workdir)
+            os.makedirs(options.workdir)
 
-
-    if options.json is not None: 
-        # all information is stored in .json file
-        # format: list of dicts: {subject:<s> , visit:<v> , t1w:<t1w> , pdw:<pdw> , t2w:<t2w> , flr:<flr>, age: <age>, sex: <sex>}
-
-        with open(options.json,'r') as f:
-            patient_list=json.load(f)
-        assert isinstance(patient_list,list), "JSON file should contain a list of patients"
-        for p in patient_list:
-            assert 'subject' in p, "JSON file should contain a list of patients with 'subject' field"
-            assert 'visit' in p, "JSON file should contain a list of patients with 'visit' field"
-            assert 't1w' in p, "JSON file should contain a list of patients with 't1w' field"
-
-            id=str(p['subject'])
-            visit=str(p['visit'])
-
-            if id not in patients:
-                patients[id] = setup_patient(id,options)
-                if 'sex' in p:
-                    patients[id].sex = p['sex']
-
-            setup_visit(patients[id], visit,
-                        t1=p['t1w'],
-                        t2=p.get('t2w',None),
-                        pd=p.get('pdw',None),
-                        flair=p.get('flr', p.get('flair',None)),
-                        age=p.get('age',None),
-                        geo_t1=p.get('geot1',None),
-                        geo_t2=p.get('geot2',None),
-                        t2les=p.get('t2les',None),
-                        )
-    elif options.csv is not None: # CSV list , with header
+    if options.csv is not None:  # CSV list, with header
         import pandas as pd
-        df=pd.read_csv(options.csv,dtype=str,na_filter=False)
-        
+
+        df = pd.read_csv(options.csv, dtype=str, na_filter=False)
+
         assert 'subject' in df.columns, "csv file should contain a list of patients with 'subject' column"
         assert 'visit' in df.columns, "csv file should contain a list of patients with 'visit' column"
         assert 't1w' in df.columns, "css file should contain a list of patients with 't1w' column"
-        
+
         for i in range(len(df)):
-            id=df.loc[i,'subject']
-            visit=df.loc[i,'visit']
+            id = df.loc[i, 'subject']
+            visit = df.loc[i, 'visit']
             if id not in patients:
-                patients[id] = setup_patient(id,options)
-            
-            t1=df.loc[i,'t1w']
+                patients[id] = setup_patient(id, options)
+
+            t1 = df.loc[i, 't1w']
             # optional fields
-            age=float(df.loc[i,'age']) if 'age' in df.columns else None
-            geo_t1=df.loc[i,'geot1'] if 'geot1' in df.columns else None
-            geo_t2=df.loc[i,'geot2'] if 'geot2' in df.columns else None
-            t2les=df.loc[i,'t2les'] if 't2les' in df.columns else None
-            t2=df.loc[i,'t2w'] if 't2w' in df.columns else None
-            pd_=df.loc[i,'pdw'] if 'pdw' in df.columns else None
+            age = float(df.loc[i, 'age']) if 'age' in df.columns else None
+            geo_t1 = df.loc[i, 'geot1'] if 'geot1' in df.columns else None
+            geo_t2 = df.loc[i, 'geot2'] if 'geot2' in df.columns else None
+            t2les = df.loc[i, 't2les'] if 't2les' in df.columns else None
+            t2 = df.loc[i, 't2w'] if 't2w' in df.columns else None
+            pd_ = df.loc[i, 'pdw'] if 'pdw' in df.columns else None
 
             if 'flr' in df.columns:
-                flair_=df.loc[i,'flr']
-            elif  'flair' in df.columns:
-                flair_=df.loc[i,'flair']
+                flair_ = df.loc[i, 'flr']
+            elif 'flair' in df.columns:
+                flair_ = df.loc[i, 'flair']
             else:
-                flair_=None
+                flair_ = None
 
             # TODO: add flair
-            setup_visit(patients[id], visit,
-                        t1=t1,
-                        t2=t2,
-                        pd=pd_,
-                        flair=flair_,
-                        age=age,
-                        geo_t1=geo_t1,
-                        geo_t2=geo_t2,
-                        t2les=t2les,
-                        )
-    elif options.list is not None: # legacy option
+            setup_visit(
+                patients[id],
+                visit,
+                t1=t1,
+                t2=t2,
+                pd=pd_,
+                flair=flair_,
+                age=age,
+                geo_t1=geo_t1,
+                geo_t2=geo_t2,
+                t2les=t2les,
+            )
+    elif options.list is not None:  # legacy option
         # for each patient
         with open(options.list) as p:
             for line in p:
@@ -283,8 +251,8 @@ def launchPipeline(options):
 
                 size = len(sp)  # depending the number of items not all information was given
                 if size < 3:
-                    print( ' -- Line error: ' + str(len(sp)) )
-                    print( '     - Minimum format is :  id,visit,t1' )
+                    print(' -- Line error: ' + str(len(sp)))
+                    print('     - Minimum format is :  id,visit,t1')
                     continue
 
                 id = sp[0]  # set id
@@ -292,44 +260,44 @@ def launchPipeline(options):
 
                 # ## Add patient if not found
                 if id not in patients:  # search key in the dictionary
-                    patients[id] = setup_patient(id,options)  # create new LngPatient
+                    patients[id] = setup_patient(id, options)  # create new LngPatient
 
                     if size > 6:
                         patients[id].sex = sp[6]
 
-
                 # ## Add timepoint to the patient
-                setup_visit(patients[id], visit,
-                            t1=sp[2],
-                            t2=sp[3]     if size > 3 and len(sp[3])>0 else None,
-                            pd=sp[4]     if size > 4 and len(sp[4])>0 else None,
-                            age=float(sp[5])  if size > 5 and len(sp[5])>0 else None,
-                            geo_t1=sp[7] if size > 7 and len(sp[7])>0 else None,
-                            geo_t2=sp[8] if size > 8 and len(sp[8])>0 else None,
-                            t2les=sp[9]  if size > 9 and len(sp[9])>0 else None,
-                            )
+                setup_visit(
+                    patients[id],
+                    visit,
+                    t1=sp[2],
+                    t2=sp[3] if size > 3 and len(sp[3]) > 0 else None,
+                    pd=sp[4] if size > 4 and len(sp[4]) > 0 else None,
+                    age=float(sp[5]) if size > 5 and len(sp[5]) > 0 else None,
+                    geo_t1=sp[7] if size > 7 and len(sp[7]) > 0 else None,
+                    geo_t2=sp[8] if size > 8 and len(sp[8]) > 0 else None,
+                    t2les=sp[9] if size > 9 and len(sp[9]) > 0 else None,
+                )
                 # end of adding timepoint
-                print('{} - {}'.format(id,visit) )
+                print('{} - {}'.format(id, visit))
                 # store patients in the pickle
 
     # use ray to run all subjects in parallel
     pickles = []
 
-    for (id, i) in patients.items():
+    for id, i in patients.items():
         # writing the pickle file
         if not os.path.exists(i.pickle):
             i.write(i.pickle)
         pickles.append(i.pickle)
-    
-    if options.ray_batch==0:
-        options.ray_batch=len(pickles)
 
-    n_fail=0
+    if options.ray_batch == 0:
+        options.ray_batch = len(pickles)
+
+    n_fail = 0
     jobs_done = []
-    while len(pickles)>0:
-
-        jobs=[ runPipeline.remote(i) for j,i in enumerate(pickles) if j<options.ray_batch ]
-        pickles = pickles[len(jobs):]
+    while len(pickles) > 0:
+        jobs = [runPipeline.remote(i) for j, i in enumerate(pickles) if j < options.ray_batch]
+        pickles = pickles[len(jobs) :]
         print(f"waiting for {len(jobs)} jobs")
 
         while jobs:
@@ -337,11 +305,11 @@ def launchPipeline(options):
                 ready_jobs, jobs = ray.wait(jobs, num_returns=1)
                 jobs_done += ray.get(ready_jobs)
             except ray.exceptions.RayTaskError as e:
-                n_fail+=1
-                print("Exception in runPipeline:{}".format(sys.exc_info()[0]) )
-                print(e.traceback_str,flush=True)
-                ee=e.as_instanceof_cause()
-                print(ee,flush=True)
+                n_fail += 1
+                print("Exception in runPipeline:{}".format(sys.exc_info()[0]))
+                print(e.traceback_str, flush=True)
+                ee = e.as_instanceof_cause()
+                print(ee, flush=True)
             except KeyboardInterrupt:
                 print("Aborting")
                 exit(1)
@@ -352,6 +320,7 @@ def launchPipeline(options):
 ###### CLEAN PICKLE
 # - Remove all not created images
 
+
 def cleanPickle(pickle):
     patient = LngPatient.read(pickle)
     patient.clean()
@@ -359,8 +328,7 @@ def cleanPickle(pickle):
 
 
 def parse_options():
-    usage = \
-    """%(prog)s -l <patients.list> -o <outputdir> [--run]
+    usage = """%(prog)s -l <patients.list> -o <outputdir> [--run]
    or: %(prog)s --json <patients.json> -o <outputdir> [--run]
    or: %(prog)s --csv <patients.csv> -o <outputdir> [--run]
    or: %(prog)s -p <patient.pickle> [--status|--run]
@@ -386,37 +354,28 @@ def parse_options():
           If the image exists it will replace part of the processing.
    """
 
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-                                      usage=usage,
-                                      description="Longitudinal pipeline")
-
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter, usage=usage, description="Longitudinal pipeline"
+    )
 
     group = parser.add_argument_group('Required options ')
 
-    group.add_argument('-j', '--json', dest='json',
-                     help='Json file with a list of datapoints to process',
-                     default=None)
+    group.add_argument('--csv', dest='csv', help='csv file with a list of datapoints to process', default=None)
 
-    group.add_argument('--csv', dest='csv',
-                     help='csv file with a list of datapoints to process',
-                     default=None)
-    
-    group.add_argument('-l', '--list', dest='list',
-                     help='CSV file without header with the list of subjects: (format) id,visit,t1w,t2w,pdw,sex,age,geot1,geot2,lesions'
-                     )
+    group.add_argument(
+        '-l',
+        '--list',
+        dest='list',
+        help='CSV file without header with the list of subjects: (format) id,visit,t1w,t2w,pdw,sex,age,geot1,geot2,lesions',
+    )
 
-    group.add_argument('-o', '--output-dir', dest='output',
-                     help='Output dir')
+    group.add_argument('-o', '--output-dir', dest='output', help='Output dir')
 
-    group = group.add_argument_group('Pipeline options ',
-                         ' Options to start processing')
+    group = group.add_argument_group('Pipeline options ', ' Options to start processing')
 
-
-    group.add_argument('-w', '--work-dir', dest='workdir',
-                     help='Work dir',default=None)
+    group.add_argument('-w', '--work-dir', dest='workdir', help='Work dir', default=None)
 
     group = parser.add_argument_group('Processing options ')
-
 
     group.add_argument(
         '-D',
@@ -425,12 +384,9 @@ def parse_options():
         help='Denoise first images',
         action='store_true',
         default=False,
-        )
+    )
 
-    group.add_argument('-3', '--3T', dest='mri3T',
-                     help='Parameters for 3T scans', action='store_true',
-                     default=False
-                     )
+    group.add_argument('-3', '--3T', dest='mri3T', help='Parameters for 3T scans', action='store_true', default=False)
 
     group.add_argument(
         '--DBM',
@@ -438,7 +394,7 @@ def parse_options():
         help='Do longitudinal dbm',
         action='store_true',
         default=False,
-        )
+    )
 
     group.add_argument(
         '--VBM',
@@ -446,14 +402,14 @@ def parse_options():
         help='Run VBM',
         action='store_true',
         default=False,
-        )
+    )
 
     group.add_argument(
         '--vbm_blur',
         dest='vbm_blur',
         help='VBM blurring',
         default=4.0,
-        )
+    )
 
     group.add_argument(
         '--vbm_res',
@@ -461,13 +417,9 @@ def parse_options():
         help='VBM resolution',
         type=float,
         default=2.0,
-        )
+    )
 
-    group.add_argument(
-        '--vbm_nl_level',
-        dest='vbm_nl',
-        help='VBM nl level'
-        )
+    group.add_argument('--vbm_nl_level', dest='vbm_nl', help='VBM nl level')
 
     group.add_argument(
         '--nogeo',
@@ -475,7 +427,7 @@ def parse_options():
         help='Disable distorsion correction, default enabled if present',
         action='store_false',
         default=True,
-        )
+    )
 
     group.add_argument(
         '--no_mask_n3',
@@ -483,7 +435,7 @@ def parse_options():
         help='Disable masking of MRI for N3',
         action='store_false',
         default=False,
-        )
+    )
 
     group.add_argument(
         '--n4',
@@ -491,7 +443,7 @@ def parse_options():
         help='Use N4 + advanced masking',
         action='store_true',
         default=False,
-        )
+    )
 
     group.add_argument(
         '--noles',
@@ -499,26 +451,21 @@ def parse_options():
         help='Disable lesion masks',
         action='store_false',
         default=True,
-        )
+    )
+
     group.add_argument(
-        '--biascorr',
-        dest='dobiascorr',
-        help='Perform longitudinal bias correction',
-        action='store_true',
-        default=False)
+        '--biascorr', dest='dobiascorr', help='Perform longitudinal bias correction', action='store_true', default=False
+    )
 
-    group.add_argument('--model-dir', dest='modeldir',
-                     help='Directory with the model ',
-                     default='/ipl/quarantine/models/icbm152_model_09c/'
-                     )
+    group.add_argument(
+        '--model-dir', dest='modeldir', help='Directory with the model ', default='/ipl/quarantine/models/icbm152_model_09c/'
+    )
 
-    group.add_argument('--model-name', dest='modelname',
-                     help='Model name',
-                     default='mni_icbm152_t1_tal_nlin_sym_09c')
+    group.add_argument('--model-name', dest='modelname', help='Model name', default='mni_icbm152_t1_tal_nlin_sym_09c')
 
-    group.add_argument('--beast-dir', dest='beastdir',
-                     help='Directory with the beast library ',
-                     default='/ipl/quarantine/models/beast')
+    group.add_argument(
+        '--beast-dir', dest='beastdir', help='Directory with the beast library ', default='/ipl/quarantine/models/beast'
+    )
 
     group.add_argument(
         '--skullreg',
@@ -526,42 +473,20 @@ def parse_options():
         help='Run skull registration in stx (REDSKULL)',
         action='store_true',
         default=False,
-        )
+    )
 
-    group.add_argument('--redskull_onnx', 
-                     help='onnx library for redskull brain+skull',
-                     default=None
-                     )
-    
-    group.add_argument('--redskull_var', 
-                     dest='redskull_var',
-                     help='Redskull variant',
-                     default='seg'
-                     )
+    group.add_argument('--redskull_onnx', help='onnx library for redskull brain+skull', default=None)
 
-    group.add_argument('--synthstrip_onnx', 
-                     dest='synthstrip_onnx',
-                     help='onnx library for synthstrip segmentation'
-                     )
-    
-    group.add_argument('--bison_pfx', 
-                     help='Bison tissue classification model prefix'
-                     )
-    group.add_argument('--bison_atlas_pfx', 
-                     help='Bison atlas prefix'
-                     )
-    group.add_argument('--bison_method', 
-                     help='Bison method'
-                     )
-    group.add_argument('--wmh_bison_pfx', 
-                     help='Bison tissue classification model prefix'
-                     )
-    group.add_argument('--wmh_bison_atlas_pfx', 
-                     help='Bison atlas prefix'
-                     )
-    group.add_argument('--wmh_bison_method', 
-                     help='Bison method'
-                     )
+    group.add_argument('--redskull_var', dest='redskull_var', help='Redskull variant', default='seg')
+
+    group.add_argument('--synthstrip_onnx', dest='synthstrip_onnx', help='onnx library for synthstrip segmentation')
+
+    group.add_argument('--bison_pfx', help='Bison tissue classification model prefix')
+    group.add_argument('--bison_atlas_pfx', help='Bison atlas prefix')
+    group.add_argument('--bison_method', help='Bison method')
+    group.add_argument('--wmh_bison_pfx', help='Bison tissue classification model prefix')
+    group.add_argument('--wmh_bison_atlas_pfx', help='Bison atlas prefix')
+    group.add_argument('--wmh_bison_method', help='Bison method')
 
     group.add_argument(
         '--large_atrophy',
@@ -569,26 +494,20 @@ def parse_options():
         help='Remove the ventricles for the linear template creation',
         action='store_true',
         default=False,
-        )
+    )
 
-    group.add_argument('--manual', dest='manual',
-                     help='Manual or alternative processing path to find auxiliary data (look info)'
-                     )
+    group.add_argument(
+        '--manual', dest='manual', help='Manual or alternative processing path to find auxiliary data (look info)'
+    )
 
     group.add_argument(
         '--linreg',
         dest='linreg',
         help='Linear registration method',
         default='bestlinreg_20180117',
-        )
+    )
 
-    group.add_argument(
-        '--rigid',
-        dest='rigid',
-        help='Use lsq6 for linear average',
-        action='store_true',
-        default=False
-        )
+    group.add_argument('--rigid', dest='rigid', help='Use lsq6 for linear average', action='store_true', default=False)
 
     group.add_argument(
         '--nl_ants',
@@ -596,23 +515,13 @@ def parse_options():
         help='Use ANTs for nonlinear registration',
         action='store_true',
         default=False,
-        )
+    )
 
     group.add_argument(
-        '--nl_cost_fun',
-        dest='nl_cost_fun',
-        help='ANTs cost function',
-        default='CC',
-        choices=['CC', 'MI', 'Mattes']
-        )
+        '--nl_cost_fun', dest='nl_cost_fun', help='ANTs cost function', default='CC', choices=['CC', 'MI', 'Mattes']
+    )
 
-    group.add_argument(
-        '--nl_step',
-        dest='nl_step',
-        help='Nonlinear registration step',
-        type=float,
-        default=2.0
-        )
+    group.add_argument('--nl_step', dest='nl_step', help='Nonlinear registration step', type=float, default=2.0)
 
     group.add_argument(
         '--add',
@@ -620,13 +529,11 @@ def parse_options():
         dest='add',
         help='Add custom step with description in .json file',
         default=[],
-        )
+    )
 
-    group = parser.add_argument_group('Execution options ',
-                         ' Once the picke files are created')
+    group = parser.add_argument_group('Execution options ', ' Once the picke files are created')
 
-    group.add_argument('-p', '--pickle', dest='pickle',
-                     help=' Open a pickle file')
+    group.add_argument('-p', '--pickle', dest='pickle', help=' Open a pickle file')
 
     group.add_argument(
         '-s',
@@ -635,7 +542,7 @@ def parse_options():
         help=' Status of the pickle file (print object in a readable form)',
         action='store_true',
         default=False,
-        )
+    )
 
     group.add_argument(
         '-c',
@@ -644,20 +551,15 @@ def parse_options():
         help=' Clean all the images in the pickle that do not exist',
         action='store_true',
         default=False,
-        )
+    )
 
     group = parser.add_argument_group('Parallel execution options ')
 
-    group.add_argument('--ray_start',type=int,
-                        help='start local ray instance')
-    group.add_argument('--ray_local',action='store_true',
-                        help='local ray (single process)')
-    group.add_argument('--ray_host',
-                        help='ray host address')
-    group.add_argument('--ray_batch',default=0,type=int,
-                        help='Submit ray jobs in batches')
-    group.add_argument('--threads',default=1,type=int,
-                        help='Number of threads to use inside some ray jobs')
+    group.add_argument('--ray_start', type=int, help='start local ray instance')
+    group.add_argument('--ray_local', action='store_true', help='local ray (single process)')
+    group.add_argument('--ray_host', help='ray host address')
+    group.add_argument('--ray_batch', default=0, type=int, help='Submit ray jobs in batches')
+    group.add_argument('--threads', default=1, type=int, help='Number of threads to use inside some ray jobs')
 
     group = parser.add_argument_group('General Options ')
 
@@ -668,27 +570,22 @@ def parse_options():
         help='Verbose mode',
         action='store_true',
         default=False,
-        )
+    )
     group.add_argument(
         '-q',
         '--quiet',
         help='Suppress some logging messages',
         action='store_true',
         default=False,
-        )
+    )
 
-    group.add_argument('-f', '--fast', dest='fast',
-                     help='Fast mode : quick & dirty mostly for testing pipeline', 
-                     action='store_true')
-    
-    group.add_argument('--cleanup', 
-                     help='Remove intermediate files to save disk space', 
-                     action='store_true',
-                     default=False)
+    group.add_argument(
+        '-f', '--fast', dest='fast', help='Fast mode : quick & dirty mostly for testing pipeline', action='store_true'
+    )
 
+    group.add_argument('--cleanup', help='Remove intermediate files to save disk space', action='store_true', default=False)
 
     options = parser.parse_args()
-
 
     return options
 
@@ -699,18 +596,16 @@ def main():
     # VF: disabled in public release
     opts.temporalregu = False
 
-    if opts.ray_start is not None: # HACK?
-        ray.init(num_cpus=opts.ray_start,log_to_driver=not opts.quiet)
+    if opts.ray_start is not None:  # HACK?
+        ray.init(num_cpus=opts.ray_start, log_to_driver=not opts.quiet)
     elif opts.ray_local:
-        ray.init(local_mode=True,log_to_driver=not opts.quiet)
+        ray.init(local_mode=True, log_to_driver=not opts.quiet)
     elif opts.ray_host is not None:
-        ray.init(address=opts.ray_host+':6379',log_to_driver=not opts.quiet)
+        ray.init(address=opts.ray_host + ':6379', log_to_driver=not opts.quiet)
     else:
-        ray.init(address='auto',log_to_driver=not opts.quiet)
+        ray.init(address='auto', log_to_driver=not opts.quiet)
 
-    if opts.list is not None or \
-       opts.json is not None or \
-       opts.csv is not None:
+    if opts.list is not None or opts.json is not None or opts.csv is not None:
         if opts.output is None:
             print('Please specify and output dir (-o)')
             sys.exit(1)
@@ -723,4 +618,3 @@ def main():
 
     if opts.ray_start is not None:
         ray.shutdown()
-    

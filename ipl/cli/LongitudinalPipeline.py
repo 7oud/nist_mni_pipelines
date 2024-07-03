@@ -26,6 +26,7 @@ from ipl.longitudinal.main import runPipeline
 # parallel processing
 import ray
 
+
 def launchPipeline(options):
     '''
     INPUT: options are the parsed information from the command line
@@ -458,7 +459,6 @@ def parse_options():
     group.add_argument('-o', '--output-dir', dest='output',
                      help='Output dir')
 
-
     group = group.add_argument_group('Pipeline options ',
                          ' Options to start processing')
 
@@ -625,7 +625,7 @@ def parse_options():
         )
 
     group.add_argument('--redskull_onnx', 
-                     help='omnivision library for redskull brain+skull',
+                     help='onnx library for redskull brain+skull',
                      default=None
                      )
     
@@ -812,7 +812,7 @@ def main():
     elif opts.pickle is not None:
         runPipeline(opts.pickle, workdir=opts.workdir)
     else:
-        print("missing something...")
+        print("missing input file")
         sys.exit(1)
 
     if opts.ray_start is not None:

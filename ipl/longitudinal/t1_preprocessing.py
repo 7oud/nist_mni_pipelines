@@ -188,7 +188,6 @@ def run_nlm(in_t1w, out_den):
         os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS']=_itk_num_threads
 
 
-
 @ray.remote(num_cpus=4, memory=10000 * 1024 * 1024) # uses about 10GB of RAM
 def run_synthstrip_onnx(in_t1w, out_synthstrip, 
         out_qc=None, qc_title=None, normalize_1x1x1=False,
@@ -227,9 +226,7 @@ def run_synthstrip_onnx(in_t1w, out_synthstrip,
                 )
 
 
-
 def t1preprocessing_v10(patient, tp):
-
     # # processing data
     # ##################
     with mincTools() as minc:

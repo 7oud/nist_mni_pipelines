@@ -17,7 +17,7 @@ try:
 except ModuleNotFoundError:
     # for old scikit-learn
     from sklearn.externals import joblib
-# numpy
+
 import numpy as np
 
 # using joblib to parallelize jobs (?)
@@ -57,6 +57,7 @@ def load_image( infile ):
         print("Error loading:",infile)
         raise
 
+
 def save_labels( outfile, reference, data, mask=None, history=None ):
     # TODO: add history
     ref=minc2_file(reference)
@@ -91,6 +92,7 @@ def save_cnt( outfile, reference, data, mask=None, history=None ):
         _out[mask>0] = data
         out.save_complete_volume(_out)
 
+
 def load_cnt_volumes(vol_files, mask=None):
     out = []
     for v,m in zip(vol_files, mask):
@@ -103,6 +105,7 @@ def load_cnt_volumes(vol_files, mask=None):
             print("Warning:",v,"produces zero length volume")
         out += [vv]
     return out
+
 
 def load_bin_volumes(vol_files, mask=None):
     out=[]
@@ -142,6 +145,7 @@ def resample_job(in_mnc, out_mnc, ref, xfm, invert_xfm):
     with mincTools() as m:
         m.resample_smooth(in_mnc, out_mnc, order=2, like=ref, transform=xfm, invert_transform=invert_xfm)
     return out_mnc
+
 
 def load_all_volumes(train, n_cls, 
     modalities=('t1','t2','pd','flair','ir','mp2t1', 'mp2uni'),
@@ -338,6 +342,7 @@ def get_batch(dict_array,batch,batch_size):
         n=len(dict_array[i])
         out[i]=dict_array[i][batch*batch_size:min((batch+1)*batch_size,n)]
     return out
+
 
 def init_clasifierr(method,n_jobs=None,random=None):
     
