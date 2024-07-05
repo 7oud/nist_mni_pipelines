@@ -149,8 +149,7 @@ def concat_resample_nl(
                 else:
                     if qc:
                         m.qc(output_mri.scan_f, output_mri.scan_f+'.jpg')
-                
-                    
+
         return True
     except mincError as e:
         print("Exception in concat_resample_nl:{}".format(str(e)) )

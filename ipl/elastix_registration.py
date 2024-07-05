@@ -521,7 +521,6 @@ def register_elastix(
                             cmd.extend(['-mp',tmp.cache(t_base+'_tags.txt')] )
                             shutil.copyfile(tmp.cache(t_base+'_tags.txt'),"target.tag")
                     
-                    
                     outputs=[ it_output_dir+os.sep+'TransformParameters.0.txt' ]
 
                     outcome=None

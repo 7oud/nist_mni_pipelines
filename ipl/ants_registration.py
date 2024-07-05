@@ -318,7 +318,6 @@ def non_linear_register_ants2(
 
         cmd=['antsRegistration','--minc','1','-a','--dimensionality','3']
 
-
         (sources_lr, targets_lr, source_mask_lr, target_mask_lr)=minc.downsample_registration_files(sources,targets,source_mask,target_mask, downsample)
 
         dilate_mask = parameters.get("dilate_mask", None)
@@ -344,7 +343,6 @@ def non_linear_register_ants2(
                 cost_function_par_=cost_function_par
             #
             cmd.extend(['--metric','{}[{},{},{}]'.format(cost_function_, sources_lr[_s], targets_lr[_s], cost_function_par_)])
-
         
         cmd.extend(['--convergence','[{}]'.format(prog)])
         cmd.extend(['--shrink-factors',shrink])

@@ -133,7 +133,7 @@ def average_samples(
                 
             for s in samples:
                 avg.append(s.scan)
-                
+
             if symmetric:
                 for s in samples:
                     avg.append(s.scan_f)

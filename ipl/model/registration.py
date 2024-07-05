@@ -44,7 +44,7 @@ def xfmavg(inputs, output, verbose=False):
         else:
             all_linear&=False
             # strip identity matrixes
-            nl=[]
+
             _identity=np.asmatrix(np.identity(4))
             _eps=1e-6
             if x.get_n_type(0)==minc2_xfm.MINC2_XFM_LINEAR and x.get_n_type(1)==minc2_xfm.MINC2_XFM_GRID_TRANSFORM:
@@ -58,7 +58,7 @@ def xfmavg(inputs, output, verbose=False):
                 # TODO: if grid have to be inverted!
                 (grid_file,grid_invert)=x.get_grid_transform(0)
                 input_grids.append(grid_file)
-                
+
     if all_linear:
         acc=np.asmatrix(np.zeros([4,4],dtype=complex))
         for i in input_xfms:
@@ -72,7 +72,6 @@ def xfmavg(inputs, output, verbose=False):
         x.save(output)
         
     elif all_nonlinear:
-        
         output_grid=output.rsplit('.xfm',1)[0]+'_grid_0.mnc'
         
         with mincTools() as m:
@@ -478,7 +477,6 @@ def ants_register_step(
             out=m.tmp('forward')
             out_f=m.tmp('forward_f')
             if symmetric:
-
                 if m.checkfiles(inputs=[sample.scan,model.scan,sample.scan_f],
                                 outputs=[output.xfm, output.xfm_f]):
                     

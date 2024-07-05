@@ -26,7 +26,14 @@ import ray
 
 
 def generate_nonlinear_average(
-    samples, initial_model=None, output_model=None, output_model_sd=None, prefix='.', options={}, skip=0, stop_early=100000
+    samples,
+    initial_model=None,
+    output_model=None,
+    output_model_sd=None,
+    prefix='.',
+    options={},
+    skip=0,
+    stop_early=100000,
 ):
     """perform iterative model creation"""
 
@@ -79,7 +86,7 @@ def generate_nonlinear_average(
             flip_all.append(generate_flip_sample.remote(s))
 
         ray.get(flip_all)
-    
+
     # go through all the iterations
     it = 0
     for i, p in enumerate(protocol):
@@ -93,20 +100,19 @@ def generate_nonlinear_average(
             # 1 register all subjects to current template
             next_model = MriDataset(prefix=prefix, iter=it, name='avg', has_mask=current_model.has_mask())
             next_model_sd = MriDataset(prefix=prefix, iter=it, name='sd', has_mask=current_model.has_mask())
-            transforms = []
 
             it_prefix = prefix + os.sep + str(it)
             if not os.path.exists(it_prefix):
                 os.makedirs(it_prefix)
 
+            transforms = []
             inv_transforms = []
             fwd_transforms = []
 
-            start = None
-            if it == 1:
-                start = start_level
+            start = start_level if it == 1 else None
 
             for i, s in enumerate(samples):
+
                 sample_xfm = MriTransform(name=s.name, prefix=it_prefix, iter=it)
                 sample_inv_xfm = MriTransform(name=s.name + '_inv', prefix=it_prefix, iter=it)
 
@@ -120,69 +126,30 @@ def generate_nonlinear_average(
 
                 if it > skip and it < stop_early:
                     if use_dd:
-                        transforms.append(
-                            dd_register_step.remote(
-                                s,
-                                current_model,
-                                sample_xfm,
-                                output_invert=sample_inv_xfm,
-                                init_xfm=prev_transform,
-                                symmetric=symmetric,
-                                parameters=parameters,
-                                level=p['level'],
-                                start=start,
-                                work_dir=prefix,
-                                downsample=downsample,
-                            )
-                        )
+                        nl_register_step = dd_register_step
                     elif use_ants:
-                        transforms.append(
-                            ants_register_step.remote(
-                                s,
-                                current_model,
-                                sample_xfm,
-                                output_invert=sample_inv_xfm,
-                                init_xfm=prev_transform,
-                                symmetric=symmetric,
-                                parameters=parameters,
-                                level=p['level'],
-                                start=start,
-                                work_dir=prefix,
-                                downsample=downsample,
-                            )
-                        )
+                        nl_register_step = ants_register_step
                     elif use_elastix:
-                        transforms.append(
-                            elastix_register_step.remote(
-                                s,
-                                current_model,
-                                sample_xfm,
-                                output_invert=sample_inv_xfm,
-                                init_xfm=prev_transform,
-                                symmetric=symmetric,
-                                parameters=parameters,
-                                level=p['level'],
-                                start=start,
-                                work_dir=prefix,
-                                downsample=downsample,
-                            )
-                        )
+                        nl_register_step = elastix_register_step
                     else:
-                        transforms.append(
-                            non_linear_register_step.remote(
-                                s,
-                                current_model,
-                                sample_xfm,
-                                output_invert=sample_inv_xfm,
-                                init_xfm=prev_transform,
-                                symmetric=symmetric,
-                                parameters=parameters,
-                                level=p['level'],
-                                start=start,
-                                work_dir=prefix,
-                                downsample=downsample,
-                            )
+                        nl_register_step = non_linear_register_step
+
+                    transforms.append(
+                        nl_register_step.remote(
+                            s,              # [in]
+                            current_model,  # [in]
+                            sample_xfm,     # [out]
+                            output_invert=sample_inv_xfm,   # [out] 
+                            init_xfm=prev_transform,        # [in]
+                            symmetric=symmetric,
+                            parameters=parameters,
+                            level=p['level'],
+                            start=start,
+                            work_dir=prefix,
+                            downsample=downsample,
                         )
+                    )
+
                 inv_transforms.append(sample_inv_xfm)
                 fwd_transforms.append(sample_xfm)
 
@@ -197,10 +164,8 @@ def generate_nonlinear_average(
                 for x in corr_transforms:
                     x.cleanup()
 
-            # here all the transforms should exist
-            avg_inv_transform = MriTransform(name='avg_inv', prefix=it_prefix, iter=it)
-
             # 2 average all transformations
+            avg_inv_transform = MriTransform(name='avg_inv', prefix=it_prefix, iter=it)
             if it > skip and it < stop_early:
                 result = average_transforms.remote(inv_transforms, avg_inv_transform, nl=True, symmetric=symmetric)
                 ray.get([result])
@@ -244,7 +209,12 @@ def generate_nonlinear_average(
             # 4 average resampled samples to create new estimate
             if it > skip and it < stop_early:
                 result = average_samples.remote(
-                    corr_samples, next_model, next_model_sd, symmetric=symmetric, symmetrize=symmetric, median=use_median
+                    corr_samples,   # [input]
+                    next_model,     # [output]
+                    next_model_sd,  # [output]
+                    symmetric=symmetric,
+                    symmetrize=symmetric,
+                    median=use_median,
                 )
                 ray.get([result])
 
@@ -291,29 +261,6 @@ def generate_nonlinear_average(
             m.cleanup()
 
     return results
-
-
-def generate_nonlinear_model_csv(input_csv, model=None, mask=None, work_prefix=None, options={}, skip=0, stop_early=100000):
-    internal_sample = []
-
-    with open(input_csv, 'r') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',', quoting=csv.QUOTE_NONE)
-        for row in reader:
-            if len(row) >= 2:
-                internal_sample.append(MriDataset(scan=row[0], mask=row[1]))
-            else:
-                internal_sample.append(MriDataset(scan=row[0]))
-
-    internal_model = None
-    if model is not None:
-        internal_model = MriDataset(scan=model, mask=mask)
-
-    if work_prefix is not None and not os.path.exists(work_prefix):
-        os.makedirs(work_prefix)
-
-    return generate_nonlinear_average(
-        internal_sample, internal_model, prefix=work_prefix, options=options, skip=skip, stop_early=stop_early
-    )
 
 
 def generate_nonlinear_model(samples, model=None, mask=None, work_prefix=None, options={}, skip=0, stop_early=100000):
