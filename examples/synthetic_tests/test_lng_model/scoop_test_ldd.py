@@ -6,9 +6,9 @@ from ipl.model_ldd.generate_nonlinear_ldd  import generate_ldd_model_csv
 
 
 if __name__ == '__main__':
-  ray.init()
-  # setup data for parallel processing
-  generate_ldd_model_csv('subjects_cut.lst',
+    ray.init()
+    # setup data for parallel processing
+    generate_ldd_model_csv('subjects_cut.lst',
     work_prefix='tmp_ldd',
     options={'symmetric':False,
              'refine':True,

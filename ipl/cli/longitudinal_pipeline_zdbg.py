@@ -170,8 +170,6 @@ def launchPipeline(options):
     - Run pipeline in each pickle files
     '''
 
-    patients = {}
-
     # load additional steps and store them inside option structure
     # if they are strings
     # otherwise assume they are already loaded properly
@@ -197,6 +195,7 @@ def launchPipeline(options):
         if not os.path.exists(options.workdir):
             os.makedirs(options.workdir)
 
+    patients = {}
     if options.csv is not None:  # CSV list, with header
         import pandas as pd
 
@@ -283,7 +282,6 @@ def launchPipeline(options):
 
     # use ray to run all subjects in parallel
     pickles = []
-
     for id, i in patients.items():
         # writing the pickle file
         if not os.path.exists(i.pickle):
@@ -319,8 +317,6 @@ def launchPipeline(options):
 
 ###### CLEAN PICKLE
 # - Remove all not created images
-
-
 def cleanPickle(pickle):
     patient = LngPatient.read(pickle)
     patient.clean()
@@ -508,10 +504,7 @@ def parse_options():
 
     group.add_argument('--rigid', dest='rigid', help='Use lsq6 for linear average', action='store_true', default=False)
 
-    group.add_argument(
-        '--nl_ants',
-        dest='nl_ants',
-        help='Use ANTs for nonlinear registration',
+    group.add_argument('--nl_ants', dest='nl_ants', help='Use ANTs for nonlinear registration',
         action='store_true',
         default=False,
     )
@@ -522,10 +515,7 @@ def parse_options():
 
     group.add_argument('--nl_step', dest='nl_step', help='Nonlinear registration step', type=float, default=2.0)
 
-    group.add_argument(
-        '--add',
-        action='append',
-        dest='add',
+    group.add_argument('--add', action='append', dest='add',
         help='Add custom step with description in .json file',
         default=[],
     )
@@ -588,6 +578,9 @@ def main():
     opts = parse_options()
     # VF: disabled in public release
     opts.temporalregu = False
+
+    # set default options
+    # opts.csv = ''
 
     if opts.ray_start is not None:  # HACK?
         ray.init(num_cpus=opts.ray_start, log_to_driver=not opts.quiet)

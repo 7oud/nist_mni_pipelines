@@ -1,0 +1,40 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: ipl_longitudinal_pipeline",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "ipl_longitudinal_pipeline.py",
+            "console": "integratedTerminal",
+            "env": {
+                // "PRL": "4",
+                // "THREADS": "4",
+                // "RAY_memory_monitor_refresh_ms": "0",
+            },
+            "args": [
+                "--csv", "data/subject43.csv", 
+                "-o", "output/dbg",
+                "--ray_local",
+                // "--ray_start", "1",
+                // "--threads", "0",
+                "--nl_ants",
+                "--nl_cost_fun", "CC",
+                "--model-dir", "models/icbm152_model_09c",
+                "--model-name", "mni_icbm152_t1_tal_nlin_sym_09c",
+                "--synthstrip_onnx", "models/synthstrip/synthstrip.1.onnx",
+            ]
+        },
+        {
+            "name": "Python Debugger: ipl_generate_model",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "ipl_generate_model.py",
+            "console": "integratedTerminal",
+            "args": "--csv data/subject43.csv -o output/local --ray_local --nl_ants --nl_cost_fun CC"
+        }
+    ]
+}

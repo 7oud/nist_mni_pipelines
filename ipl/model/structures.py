@@ -9,15 +9,15 @@ import json
 class MriDataset(object):
     def __init__(self, prefix=None, name=None, 
                  iter=None, scan=None, mask=None, 
-                 protect=False, par_int=[],par_def=[], has_mask=True):
+                 protect=False, par_int=[], par_def=[], has_mask=True):
         self.prefix=prefix
         self.name=name
         self.iter=iter
         self.protect=protect
-        self.scan_f=None
-        self.mask_f=None
         self.par_int=par_int
         self.par_def=par_def
+        self.scan_f=None
+        self.mask_f=None
 
         if scan is None:
             if self.iter is None:
@@ -62,14 +62,15 @@ class MriDataset(object):
                         print("Removing:{}".format(i))
                     os.unlink(i)
 
+
 class MriTransform(object):
-    def __init__(self,prefix,name,iter=None,linear=False):
+    def __init__(self, prefix, name, iter=None, linear=False):
         self.prefix=prefix
         self.name=name
         self.iter=iter
+        self.linear=linear
         self.xfm_f=None
         self.grid_f=None
-        self.linear=linear
         
         if self.iter is None:
             self.xfm=  self.prefix+os.sep+self.name+'.xfm'
@@ -81,6 +82,7 @@ class MriTransform(object):
             self.xfm_f= self.prefix+os.sep+self.name+'.{:03d}'.format(iter)+'_f.xfm'
             self.grid= self.prefix+os.sep+self.name+'.{:03d}'.format(iter)+'_grid_0.mnc'
             self.grid_f= self.prefix+os.sep+self.name+'.{:03d}'.format(iter)+'_f_grid_0.mnc'
+
         # just null grids if it is linear 
         if self.linear:
             self.grid=None

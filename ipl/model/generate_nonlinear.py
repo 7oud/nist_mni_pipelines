@@ -93,12 +93,12 @@ def generate_nonlinear_average(
             # 1 register all subjects to current template
             next_model = MriDataset(prefix=prefix, iter=it, name='avg', has_mask=current_model.has_mask())
             next_model_sd = MriDataset(prefix=prefix, iter=it, name='sd', has_mask=current_model.has_mask())
-            transforms = []
 
             it_prefix = prefix + os.sep + str(it)
             if not os.path.exists(it_prefix):
                 os.makedirs(it_prefix)
 
+            transforms = []
             inv_transforms = []
             fwd_transforms = []
 

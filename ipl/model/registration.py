@@ -249,9 +249,10 @@ def non_linear_register_step(
             
             if symmetric:
 
-                if m.checkfiles(inputs=[sample.scan,model.scan,sample.scan_f],
-                                outputs=[output.xfm,output.xfm_f]):
-                    
+                if m.checkfiles(
+                    inputs=[sample.scan, model.scan, sample.scan_f], 
+                    outputs=[output.xfm, output.xfm_f]):
+
                     ipl.registration.non_linear_register_full(
                         sample.scan,
                         model.scan,

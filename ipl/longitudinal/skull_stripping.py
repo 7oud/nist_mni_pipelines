@@ -18,7 +18,7 @@ from optparse import OptionGroup  # to change when python updates in the machine
 from ipl.minc_tools import mincTools,mincError
 from ipl import minc_qc
 
-from .t1_preprocessing import run_synthstrip_onnx
+from .t1_preprocessing import run_synthstrip_onnx, run_synthstrip_onnx_local
 import ray
 
 
@@ -146,11 +146,17 @@ def skullstripping_v10(params,
 
     with mincTools()  as minc:
         if synthstrip_onnx is not None:
-            # apply synthstrip in the native space to ease everything else
-            # need to resample to 1x1x1mm^2
-            ray.get(run_synthstrip_onnx.remote(params.stxt1, 
-                    params.stx_mask, 
-                    synthstrip_model=synthstrip_onnx))
+            worker = ray.worker.global_worker
+            if worker.mode == ray.worker.LOCAL_MODE:
+                run_synthstrip_onnx_local(
+                            params.stxt1, params.stx_mask, 
+                            synthstrip_model=synthstrip_onnx)
+            else:
+                # apply synthstrip in the native space to ease everything else
+                # need to resample to 1x1x1mm^2
+                ray.get(run_synthstrip_onnx.remote(
+                        params.stxt1, params.stx_mask, 
+                        synthstrip_model=synthstrip_onnx))
         else:
             # temporary images in the dimensions of beast database
             tmpstxt1 = minc.tmp('beast_stx_t1w.mnc')

@@ -9,3 +9,8 @@
 # precompiled python
 __pycache__
 
+# zoud
+data/
+output/
+models/
+subject*/

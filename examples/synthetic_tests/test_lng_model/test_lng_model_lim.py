@@ -3,8 +3,8 @@ from scoop import futures, shared
 import iplScoopGenerateModel as gm
 
 if __name__ == '__main__':
-  # setup data for parallel processing
-  gm.regress_ldd_csv('subjects_lim.lst',
+    # setup data for parallel processing
+    gm.regress_ldd_csv('subjects_lim.lst',
     work_prefix='tmp_regress_lim_nr_v2',
     options={
              'protocol': [

@@ -46,19 +46,19 @@ def parse_options():
                     action="store_true",
                     dest="symmetric",
                     default=False,
-                    help='Make symmetric model' )
+                    help='Make symmetric model')
 
     parser.add_argument('--nl',
                     action="store_true",
                     dest="nonlinear",
                     default=False,
-                    help='Make nonlinear model' )
+                    help='Make nonlinear model')
 
     parser.add_argument('--debug',
                     action="store_true",
                     dest="debug",
                     default=False,
-                    help='Print debugging information' )
+                    help='Print debugging information')
     
     parser.add_argument(
         '-q',

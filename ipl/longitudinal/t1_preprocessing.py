@@ -51,15 +51,24 @@ except:
 def pipeline_t1preprocessing_s0(patient, tp):
     if patient.synthstrip_onnx is not None:
         if not os.path.exists(patient[tp].clp['mask']):
-            # apply synthstrip in the native space to ease everything else
-            # need to resample to 1x1x1mm^2
-            run_synthstrip_onnx_c = run_synthstrip_onnx.options(num_cpus=patient.threads)
-            ray.get(run_synthstrip_onnx_c.remote(
-                        patient[tp].native['t1'], patient[tp].clp['mask'], 
-                        out_qc=patient[tp].qc_jpg['synthstrip'],
-                        normalize_1x1x1=True,
-                        synthstrip_model=patient.synthstrip_onnx))
-            
+
+            worker = ray.worker.global_worker
+            if worker.mode == ray.worker.LOCAL_MODE:
+                run_synthstrip_onnx_local(
+                            patient[tp].native['t1'], patient[tp].clp['mask'], 
+                            out_qc=patient[tp].qc_jpg['synthstrip'],
+                            normalize_1x1x1=True,
+                            synthstrip_model=patient.synthstrip_onnx)
+            else:
+                # apply synthstrip in the native space to ease everything else
+                # need to resample to 1x1x1mm^2
+                run_synthstrip_onnx_c = run_synthstrip_onnx.options(num_cpus=patient.threads)
+                ray.get(run_synthstrip_onnx_c.remote(
+                            patient[tp].native['t1'], patient[tp].clp['mask'], 
+                            out_qc=patient[tp].qc_jpg['synthstrip'],
+                            normalize_1x1x1=True,
+                            synthstrip_model=patient.synthstrip_onnx))
+
     # 3. denoise
     if patient.denoise:
         if not os.path.exists( patient[tp].den['t1'] ):
@@ -213,6 +222,41 @@ def run_synthstrip_onnx(in_t1w, out_synthstrip,
                                     model=synthstrip_model,
                                     whole=True,freesurfer=True,normalize=True,
                                     threads=n_threads, dist=True,largest=True,
+                                    ) # 
+
+        
+        if out_qc is not None:
+            minc_qc.qc(
+                in_t1w,
+                out_qc,
+                title=qc_title,
+                mask=out_synthstrip,dpi=200,use_max=True,
+                samples=20,bg_color="black",fg_color="white"
+                )
+
+
+def run_synthstrip_onnx_local(in_t1w, out_synthstrip, 
+        out_qc=None, qc_title=None, normalize_1x1x1=False,
+        synthstrip_model=None ):
+    
+    assert _have_segmentation_onnx, "Failed to import segment_with_onnx"
+
+    with mincTools() as minc:
+        # run redskull segmentation to create skull mask
+        if not os.path.exists(out_synthstrip):
+            if normalize_1x1x1:
+                minc.resample_smooth(in_t1w, minc.tmp('t1_1x1x1.mnc'), unistep=1.0)
+                segment_with_onnx([minc.tmp('t1_1x1x1.mnc')], minc.tmp('brain_1x1x1.mnc'),
+                                    model=synthstrip_model,
+                                    whole=True,freesurfer=True,normalize=True,
+                                    threads=0, dist=True,largest=True,
+                                    ) # 
+                minc.resample_labels(minc.tmp('brain_1x1x1.mnc'),out_synthstrip,like=in_t1w,datatype='byte')
+            else:
+                segment_with_onnx([in_t1w], out_synthstrip,
+                                    model=synthstrip_model,
+                                    whole=True,freesurfer=True,normalize=True,
+                                    threads=0, dist=True,largest=True,
                                     ) # 
 
         
