@@ -91,18 +91,15 @@ def pipeline_t2pdpreprocessing_s0(patient, tp):
 def t2pdpreprocessing_v10(patient, tp):
 
     with  mincTools() as minc:
-
         model = patient.modeldir + os.sep + patient.modelname + '.mnc'
         
         modelt2 = model.replace('t1', 't2')
         modelpd = model.replace('t1', 'pd')
-        modelmask = patient.modeldir + os.sep + patient.modelname \
-            + '_mask.mnc'
+        modelmask = patient.modeldir + os.sep + patient.modelname + '_mask.mnc'
 
         # TODO combine the two sequences in a for s in ["t2","pd","flair"] kind of...
         # # T2 Preprocessing
         # ##################
-
         if not 't2' in patient[tp].native:
             print(' -- No T2 image!')
         elif os.path.exists(patient[tp].clp['t2']) \
@@ -110,23 +107,19 @@ def t2pdpreprocessing_v10(patient, tp):
             and os.path.exists(patient[tp].stx_mnc['t2']):
             pass
         else:
-
             tmpt2 =   minc.tmp('float_t2.mnc')
             tmpmask = minc.tmp('mask_t2.mnc')
             tmpnlm =  minc.tmp('nlm_t2.mnc')
             tmpn3 =   minc.tmp('n3_t2.mnc')
             tmp_t2_t1_xfm = minc.tmp('t2_t1_0.xfm')
             tmp_t2_stx_xfm = minc.tmp('t2_stx_0.xfm')
-            tmpstats = minc.tmp('volpol_t2.stats')
 
             # minc.convert(patient[tp].native['t2'], tmpt2)
-
             # for s in ['xspace', 'yspace', 'zspace']:
             #     spacing = minc.query_attribute(tmpt2, s + ':spacing')
-
             #     if spacing.count( 'irregular' ):
             #         minc.set_attribute( tmpt2, s + ':spacing', 'regular__' )
-            
+
             # 1. Do nlm
             if patient.denoise:
                 tmpnlm = patient[tp].den['t2']
@@ -134,19 +127,17 @@ def t2pdpreprocessing_v10(patient, tp):
                 minc.convert_and_fix(patient[tp].native['t2'], tmpt2)
                 tmpnlm = tmpt2
 
-            # # manual initialization
-
+            # manual initialization
             init_xfm = None
             # VF: this is probably incorrect!
-            if 'stx_t2' in patient[tp].manual \
-                and os.path.exists(patient[tp].manual['stx_t2']):
+            if 'stx_t2' in patient[tp].manual and os.path.exists(patient[tp].manual['stx_t2']):
                 init_xfm = patient[tp].manual['stx_t2']
 
             ipl.registration.linear_register_to_self(  # patient[tp].clp["t2t1xfm"],
                 tmpnlm,
                 patient[tp].native['t1'],
                 tmp_t2_t1_xfm,
-                # changes by SFE  TODO: use onlyt1 flag here?
+                # changes by SFE  TODO: use only t1 flag here?
                 #mask='target',
                 #model=patient.modelname,
                 #modeldir=patient.modeldir,
@@ -198,9 +189,7 @@ def t2pdpreprocessing_v10(patient, tp):
                     target_mask=modelmask,
                     datatype='-short',
                     )
-                
             elif patient.mask_n3:
-
                 # 3. Reformat t1 mask
                 minc.resample_labels(patient[tp].stx_mnc['mask'],
                         tmpmask, like=tmpnlm, transform=tmp_t2_stx_xfm,
@@ -223,34 +212,26 @@ def t2pdpreprocessing_v10(patient, tp):
                     datatype='-short',
                     )
             else:
-
                 # 4. Apply n3
                 minc.nu_correct(tmpnlm, output_image=tmpn3,
                                 mri3t=patient.mri3T,
                                 output_field=patient[tp].nuc['t2'],
                                 downsample_field=4,
                                 datatype='short')
-
                 # 5. vol pol
-                minc.volume_pol(tmpn3, modelt2, patient[tp].clp['t2'],
-                                datatype='-short')
+                minc.volume_pol(tmpn3, modelt2, patient[tp].clp['t2'], datatype='-short')
 
             # register to the stx space
-            t2_corr = patient[tp].clp['t2']
             t1_corr = patient[tp].clp['t1']
-            
             if 't1' in patient[tp].geo and patient.geo_corr:
                 t1_corr = patient[tp].corr['t1']
 
+            t2_corr = patient[tp].clp['t2']
             if 't2' in patient[tp].geo and patient.geo_corr:
                 t2_corr = patient[tp].corr['t2']
-                
-                minc.resample_smooth( patient[tp].clp['t2'],
-                                    t2_corr,
-                                    transform=patient[tp].geo['t2'] )
+                minc.resample_smooth(patient[tp].clp['t2'], t2_corr, transform=patient[tp].geo['t2'])
 
-
-            # 6. second round of co-registration
+            # 6. 2nd round of co-registration
             ipl.registration.linear_register_to_self(
                 t2_corr,
                 t1_corr,
@@ -262,8 +243,7 @@ def t2pdpreprocessing_v10(patient, tp):
                 )
 
             # 7. create final T2 stx transform
-            minc.xfmconcat([patient[tp].clp['t2t1xfm'],
-                           patient[tp].stx_xfm['t1']],
+            minc.xfmconcat([patient[tp].clp['t2t1xfm'], patient[tp].stx_xfm['t1']],
                            patient[tp].stx_xfm['t2'])
 
             # 7. Resample n3 image to stx
@@ -284,16 +264,13 @@ def t2pdpreprocessing_v10(patient, tp):
             and os.path.exists(patient[tp].stx_mnc['pd']):
             print(' -- PD preprocessing exists!')
         else:
-
             # create tmpdir
             tmppd =    minc.tmp('float_pd.mnc')
             tmpmask =  minc.tmp('mask_pd.mnc')
             tmpnlm =   minc.tmp('nlm_pd.mnc')
             tmpn3 =    minc.tmp('n3_pd.mnc')
-            tmpstats = minc.tmp('volpol_pd.stats')
             tmp_pd_t1_xfm = minc.tmp('pd_t1_0.xfm')
             tmp_pd_stx_xfm = minc.tmp('pd_stx_0.xfm')
-            init_xfm = None
 
             # 1. Do nlm 
             if patient.denoise:
@@ -302,10 +279,10 @@ def t2pdpreprocessing_v10(patient, tp):
                 minc.convert_and_fix(patient[tp].native['pd'], tmppd)
                 tmpnlm = tmppd
 
+            init_xfm = None
             # 2. Best lin reg T2 to T1
             # if there is no T2, we register the data
             if not 't2' in patient[tp].native:
-
                 # tmp_xfm=tmpdir+'tmp_t1pd.xfm"'
                 print(' -- Using PD to register to T1')  # TODO: convert to minctools
                 
@@ -327,14 +304,10 @@ def t2pdpreprocessing_v10(patient, tp):
                     noautothreshold=True,
                     )
                     
-                minc.xfmconcat([tmp_pd_t1_xfm,
-                                patient[tp].stx_xfm['t1']],
-                                tmp_pd_stx_xfm)
+                minc.xfmconcat([tmp_pd_t1_xfm, patient[tp].stx_xfm['t1']], tmp_pd_stx_xfm)
             else:
                 # assume dual echo ?
                 tmp_pd_stx_xfm = patient[tp].clp['t2t1xfm']
-                        
-
 
             if patient.n4:
                 # using advanced N4 recipe from Gabriel A. Devenyi: 
@@ -394,7 +367,6 @@ def t2pdpreprocessing_v10(patient, tp):
                     target_mask=modelmask,
                     datatype='-short',
                     )
-                
             elif patient.mask_n3:
                 # # 3. Reformat t1 mask
                 minc.resample_labels(patient[tp].stx_mnc['mask'],
@@ -414,16 +386,13 @@ def t2pdpreprocessing_v10(patient, tp):
                     datatype='-short',
                     )
             else:
-
                 # 4. Apply n3
                 minc.nu_correct(tmpnlm, output_image=tmpn3,
                                 mri3t=patient.mri3T,
                                 output_field=patient[tp].nuc['pd'])
-
                 # 5. vol pol
                 minc.volume_pol(tmpn3, modelpd, patient[tp].clp['pd'],
                                 datatype='-short')
-
 
             # register to the stx space
             t1_corr = patient[tp].clp['t1']
@@ -435,9 +404,7 @@ def t2pdpreprocessing_v10(patient, tp):
 
             if 'pd' in patient[tp].geo and patient.geo_corr:
                 pd_corr = patient[tp].corr['pd']
-                minc.resample_smooth( patient[tp].clp['pd'],
-                                    pd_corr,
-                                    transform=patient[tp].geo['t2'] )
+                minc.resample_smooth(patient[tp].clp['pd'], pd_corr, transform=patient[tp].geo['t2'] )
 
             if not 't2' in patient[tp].native:
                 # 6. second round of co-registration
@@ -471,7 +438,6 @@ def t2pdpreprocessing_v10(patient, tp):
 
         # # T2les Preprocessing
         # #####################
-
         if not 't2les' in patient[tp].native:
             pass
         elif os.path.exists(patient[tp].stx_mnc['t2les']) \
@@ -479,16 +445,13 @@ def t2pdpreprocessing_v10(patient, tp):
             and os.path.exists(patient[tp].stx_ns_mnc['masknoles']):
             pass
         else:
-
             tmpdilated = minc.tmp('dilated.mnc')
             tmp_t2_xfm = patient[tp].stx_xfm['t2']
-            
-            
+
             if 't2' in patient[tp].geo and patient.geo_corr:
                 tmp_t2_xfm = minc.tmp('t2_corr_xfm.xfm')
                 minc.xfmconcat([patient[tp].geo['t2'],patient[tp].stx_xfm['t2']], tmp_t2_xfm )
-            
-                
+
             # 6. Resample lesions tostx
             minc.resample_labels(patient[tp].native['t2les'],
                     patient[tp].stx_mnc['t2les'], 
