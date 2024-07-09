@@ -16,8 +16,8 @@
                 // "RAY_memory_monitor_refresh_ms": "0",
             },
             "args": [
-                "--csv", "data/subject43.csv", 
-                "-o", "output/dbg",
+                "--csv", "data/subject43_t1.csv", 
+                "-o", "output/dbg_t1",
                 "--ray_local",
                 // "--ray_start", "1",
                 // "--threads", "0",

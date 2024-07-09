@@ -260,7 +260,6 @@ def runPipeline(pickle=None, patient=None, workdir=None):
         else:
 
             # create longitudinal template
-            # ############################
             # it creates a new stx space (stx2) registering the linear template to the atlas
             # all images are aligned using this new template and the bias correction used in the template creation
             pipeline_linearlngtemplate(patient)
@@ -269,11 +268,9 @@ def runPipeline(pickle=None, patient=None, workdir=None):
             ray.get([runSkullStripping.remote(tp, patient) for tp in tps])
 
             # using the stx2 space, we do the non-linear template
-            # ################################################
             pipeline_lngtemplate(patient)
 
             # non-linear registration of the template to the atlas
-            # ##########################
             pipeline_atlasregistration(patient)
 
             if len(patient.add) > 0:
@@ -284,7 +281,6 @@ def runPipeline(pickle=None, patient=None, workdir=None):
             ray.get([runTimePoint_ThirdStage.remote(tp, patient) for tp in tps])
 
             # longitudinal classification
-            # ############################
             if patient.dolngcls:
                 pipeline_lng_classification(patient)
 

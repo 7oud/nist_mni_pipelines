@@ -79,7 +79,7 @@ def lngtemplate_v11(patient):
 
         work_prefix = patient.workdir+os.sep+'nl'
 
-        output=generate_nonlinear_model(samples,model=atlas,mask=atlas_mask,work_prefix=work_prefix,options=options)
+        output = generate_nonlinear_model(samples,model=atlas,mask=atlas_mask,work_prefix=work_prefix,options=options)
 
         # copy output ... 
         shutil.copyfile(output['model'].scan,   patient.template['nl_template'])

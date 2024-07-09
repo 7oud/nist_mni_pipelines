@@ -268,7 +268,6 @@ def non_linear_register_ants2(
         
         modalities=len(sources)
 
-
         if parameters is None:
             #TODO add more options here
             parameters={'conf':{},
@@ -294,8 +293,7 @@ def non_linear_register_ants2(
                 shrink+='x'
                 blur+='x'
                 
-        if not minc.checkfiles(inputs=sources+targets, 
-                                outputs=[output_xfm ]):
+        if not minc.checkfiles(inputs=sources+targets, outputs=[output_xfm]):
             return
         
         prog+=','+parameters.get('convergence','1.e-6,10')
