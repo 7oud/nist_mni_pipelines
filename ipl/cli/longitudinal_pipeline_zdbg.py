@@ -383,10 +383,7 @@ def parse_options():
 
     group.add_argument('-3', '--3T', dest='mri3T', help='Parameters for 3T scans', action='store_true', default=False)
 
-    group.add_argument(
-        '--DBM',
-        dest='dodbm',
-        help='Do longitudinal dbm',
+    group.add_argument('--DBM', dest='dodbm', help='Do longitudinal dbm',
         action='store_true',
         default=False,
     )
@@ -416,34 +413,23 @@ def parse_options():
 
     group.add_argument('--vbm_nl_level', dest='vbm_nl', help='VBM nl level')
 
-    group.add_argument(
-        '--nogeo',
-        dest='geo',
+    group.add_argument('--nogeo', dest='geo',
         help='Disable distorsion correction, default enabled if present',
         action='store_false',
         default=True,
     )
 
-    group.add_argument(
-        '--no_mask_n3',
-        dest='mask_n3',
-        help='Disable masking of MRI for N3',
+    group.add_argument('--no_mask_n3', dest='mask_n3', help='Disable masking of MRI for N3',
         action='store_false',
         default=False,
     )
 
-    group.add_argument(
-        '--n4',
-        dest='n4',
-        help='Use N4 + advanced masking',
+    group.add_argument('--n4', dest='n4', help='Use N4 + advanced masking',
         action='store_true',
         default=False,
     )
 
-    group.add_argument(
-        '--noles',
-        dest='les',
-        help='Disable lesion masks',
+    group.add_argument('--noles', dest='les', help='Disable lesion masks',
         action='store_false',
         default=True,
     )
@@ -462,9 +448,7 @@ def parse_options():
         '--beast-dir', dest='beastdir', help='Directory with the beast library ', default='/ipl/quarantine/models/beast'
     )
 
-    group.add_argument(
-        '--skullreg',
-        dest='skullreg',
+    group.add_argument('--skullreg', dest='skullreg',
         help='Run skull registration in stx (REDSKULL)',
         action='store_true',
         default=False,

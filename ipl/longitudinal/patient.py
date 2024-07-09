@@ -320,7 +320,6 @@ class TP:
         self.vol = {}  # text files with volume data
 
         # non linear images
-
         self.lng_xfm = {}  # registration towards the lng template
         self.lng_grid = {}  # registration towards the lng template
         self.lng_ixfm = {}  # registration from lng templat to scan
@@ -329,12 +328,10 @@ class TP:
         self.nl_xfm = ''  # registration towards the atlas
 
         # qc images
-
         self.qc_jpg = {}  # qc images in jpg
         self.qc_title = ''
 
         # FACE
-
         self.face = {}
         
         # Additional outputs
@@ -493,7 +490,7 @@ def setFilenames(patient):
             patient[tp].stx_xfm[s] = stxdir + 'stx_' + patient.id + '_' \
                 + tp + '_' + s + '.xfm'
 
-            # stx_ns  space
+            # stx_ns space
             patient[tp].stx_ns_mnc[s] = stxdir + 'nsstx_' + patient.id \
                 + '_' + tp + '_' + s + '.mnc'
             patient[tp].stx_ns_xfm[s] = stxdir + 'nsstx_' + patient.id \

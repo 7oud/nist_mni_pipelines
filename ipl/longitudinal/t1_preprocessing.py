@@ -129,7 +129,6 @@ def pipeline_t1preprocessing(patient, tp):
     return True
 
 
-
 @ray.remote(num_cpus=4, memory=10000 * 1024 * 1024) # 
 def run_redskull_onnx(in_t1w, out_redskull, 
         unscale_xfm, out_ns_skull, out_ns_redskull, 
@@ -257,9 +256,8 @@ def run_synthstrip_onnx_local(in_t1w, out_synthstrip,
                                     model=synthstrip_model,
                                     whole=True,freesurfer=True,normalize=True,
                                     threads=0, dist=True,largest=True,
-                                    ) # 
+                                    )
 
-        
         if out_qc is not None:
             minc_qc.qc(
                 in_t1w,
@@ -272,7 +270,6 @@ def run_synthstrip_onnx_local(in_t1w, out_synthstrip,
 
 def t1preprocessing_v10(patient, tp):
     # # processing data
-    # ##################
     with mincTools() as minc:
         tmpt1 =    minc.tmp('float_t1.mnc')
         tmpmask =  minc.tmp('mask_t1.mnc')
@@ -411,21 +408,19 @@ def t1preprocessing_v10(patient, tp):
         
         if 't1' in patient[tp].geo and patient.geo_corr:
             t1_corr = patient[tp].corr['t1'] #TODO: avoid double resampling for the output!
-            minc.resample_smooth( patient[tp].clp['t1'],
-                                  t1_corr,
-                                  transform=patient[tp].geo['t1'] )
+            minc.resample_smooth(patient[tp].clp['t1'], t1_corr,transform=patient[tp].geo['t1'])
 
         # TODO: implement skull-based scaling here?
         if not os.path.exists( patient[tp].stx_xfm['t1']):
             if patient.synthstrip_onnx is not None:
                 # HACK: using masks for initial registration
-                ipl.registration.linear_register( tmpmask, modelmask,
+                ipl.registration.linear_register(tmpmask, modelmask,
                                     minc.tmp('mask_init.xfm'),
                                     init_xfm=init_xfm,
                                     objective='-xcorr',  # should use -zscore or -ssc ??
                                     conf=patient.linreg)
 
-                ipl.registration.linear_register( t1_corr, modelt1,
+                ipl.registration.linear_register(t1_corr, modelt1,
                                     patient[tp].stx_xfm['t1'],
                                     init_xfm=minc.tmp('mask_init.xfm'),
                                     objective='-nmi', 
@@ -433,13 +428,12 @@ def t1preprocessing_v10(patient, tp):
                                     source_mask=tmpmask,
                                     target_mask=modelmask)
             else:
-                ipl.registration.linear_register( t1_corr, modelt1,
+                ipl.registration.linear_register(t1_corr, modelt1,
                                     patient[tp].stx_xfm['t1'],
                                     init_xfm=init_xfm,
                                     objective='-nmi', 
                                     conf=patient.linreg)
                                     # target_mask=modelmask
-            
 
         minc.resample_smooth( t1_corr,
                               patient[tp].stx_mnc['t1'], like=modelt1,
@@ -468,7 +462,7 @@ def t1preprocessing_v10(patient, tp):
                 reference=modelmask,
                 redskull_model=patient.redskull_onnx,
                 redskull_var=patient.redskull_var ))
-            
+
             # adjust scaling factor based on the skull here? 
 
 if __name__ == '__main__':
@@ -495,17 +489,11 @@ if __name__ == '__main__':
     parser = OptionParser(usage=usage, version=version)
 
     group = OptionGroup(parser, ' -- Mandatory options ', ' Necessary')
-    group.add_option('-o', '--output-dir', dest='output',
-                     help='Output dir')
+    group.add_option('-o', '--output-dir', dest='output', help='Output dir')
     parser.add_option_group(group)
 
-    group = OptionGroup(parser, ' -- Pipeline options ',
-                        ' Options to start processing')
-    group.add_option(
-        '-D',
-        '--denoise',
-        dest='denoise',
-        help='Denoise first images',
+    group = OptionGroup(parser, ' -- Pipeline options ', ' Options to start processing')
+    group.add_option('-D', '--denoise', dest='denoise', help='Denoise first images',
         action='store_true',
         default=False,
         )
