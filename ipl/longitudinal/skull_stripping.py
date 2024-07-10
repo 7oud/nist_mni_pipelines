@@ -162,25 +162,18 @@ def skullstripping_v10(params,
             tmpstxt1 = minc.tmp('beast_stx_t1w.mnc')
             tmpmask = minc.tmp('beast_stx_mask.mnc')
 
-            beast_v10_template = params.beastdir + os.sep \
-                + 'intersection_mask.mnc'
+            beast_v10_template = params.beastdir + os.sep + 'intersection_mask.mnc'
             beast_v10_margin = params.beastdir + os.sep + 'margin_mask.mnc'
 
-            beast_v10_conffile = {'1': params.beastdir + os.sep \
-                                + 'default.1mm.conf',
-                                '2': params.beastdir + os.sep \
-                                + 'default.2mm.conf'}
-            beast_v10_intersect = params.beastdir + os.sep \
-                + 'intersection_mask.mnc'
+            beast_v10_conffile = {'1': params.beastdir + os.sep + 'default.1mm.conf',
+                                '2': params.beastdir + os.sep + 'default.2mm.conf'}
+            beast_v10_intersect = params.beastdir + os.sep + 'intersection_mask.mnc'
 
             if not os.path.exists(params.stx_mask):
-
                 # changing the size of stx if necessary to fit with the beast images dimensions
-                minc.resample_smooth(params.stxt1, tmpstxt1,
-                                    like=beast_v10_template)
+                minc.resample_smooth(params.stxt1, tmpstxt1, like=beast_v10_template)
 
                 # perform segmentation
-
                 comm = [
                     'mincbeast',
                     params.beastdir,
@@ -195,8 +188,7 @@ def skullstripping_v10(params,
                 minc.command(comm, [tmpstxt1], [tmpmask])
 
                 # reformat into the orginial stx size
-                minc.resample_labels(tmpmask, params.stx_mask,
-                                    like=params.stxt1)
+                minc.resample_labels(tmpmask, params.stx_mask, like=params.stxt1)
 
         # reformat mask into native space if needed
         if params.clp_mask is not None and \

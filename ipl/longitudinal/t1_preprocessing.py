@@ -200,7 +200,6 @@ def run_nlm(in_t1w, out_den):
 def run_synthstrip_onnx(in_t1w, out_synthstrip, 
         out_qc=None, qc_title=None, normalize_1x1x1=False,
         synthstrip_model=None ):
-    
     assert _have_segmentation_onnx, "Failed to import segment_with_onnx"
 
     n_threads=int(ray.runtime_context.get_runtime_context().get_assigned_resources()["CPU"])
@@ -223,7 +222,6 @@ def run_synthstrip_onnx(in_t1w, out_synthstrip,
                                     threads=n_threads, dist=True,largest=True,
                                     ) # 
 
-        
         if out_qc is not None:
             minc_qc.qc(
                 in_t1w,

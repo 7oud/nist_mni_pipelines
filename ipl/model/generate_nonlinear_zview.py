@@ -45,24 +45,16 @@ def generate_nonlinear_average(
     current_model = initial_model
     current_model_sd = None
 
-    transforms = []
-    corr = []
-
-    corr_transforms = []
     sd = []
     corr_samples = []
+    corr_transforms = []
 
     protocol = options.get('protocol', [{'iter': 4, 'level': 32}, {'iter': 4, 'level': 32}])
 
     cleanup = options.get('cleanup', False)
     symmetric = options.get('symmetric', False)
     parameters = options.get('parameters', None)
-    refine = options.get('refine', True)
-    qc = options.get('qc', False)
     downsample_ = options.get('downsample', None)
-    use_dd = options.get('use_dd', False)
-    use_ants = options.get('use_ants', False)
-    use_elastix = options.get('use_elastix', False)
     start_level = options.get('start_level', None)
     use_median = options.get('median', False)
 
@@ -91,10 +83,10 @@ def generate_nonlinear_average(
     it = 0
     for i, p in enumerate(protocol):
         downsample = p.get('downsample', downsample_)
-        for j in range(1, p['iter'] + 1):
+
+        for _ in range(1, p['iter'] + 1):
             it += 1
-            if it > stop_early:
-                break
+
             # this will be a model for next iteration actually
 
             # 1 register all subjects to current template
@@ -105,133 +97,94 @@ def generate_nonlinear_average(
             if not os.path.exists(it_prefix):
                 os.makedirs(it_prefix)
 
-            transforms = []
             inv_transforms = []
             fwd_transforms = []
 
             start = start_level if it == 1 else None
 
             for i, s in enumerate(samples):
-
                 sample_xfm = MriTransform(name=s.name, prefix=it_prefix, iter=it)
                 sample_inv_xfm = MriTransform(name=s.name + '_inv', prefix=it_prefix, iter=it)
 
                 prev_transform = None
 
                 if it > 1:
-                    if refine:
-                        prev_transform = corr_transforms[i]
-                    else:
-                        start = start_level  # TWEAK?
+                    prev_transform = corr_transforms[i]
 
-                if it > skip and it < stop_early:
-                    if use_dd:
-                        nl_register_step = dd_register_step
-                    elif use_ants:
-                        nl_register_step = ants_register_step
-                    elif use_elastix:
-                        nl_register_step = elastix_register_step
-                    else:
-                        nl_register_step = non_linear_register_step
-
-                    transforms.append(
-                        nl_register_step.remote(
-                            s,              # [in]
-                            current_model,  # [in]
-                            sample_xfm,     # [out]
-                            output_invert=sample_inv_xfm,   # [out] 
-                            init_xfm=prev_transform,        # [in]
-                            symmetric=symmetric,
-                            parameters=parameters,
-                            level=p['level'],
-                            start=start,
-                            work_dir=prefix,
-                            downsample=downsample,
-                        )
-                    )
+                non_linear_register_step(
+                    s,              # [in]
+                    current_model,  # [in]
+                    sample_xfm,     # [out]
+                    output_invert=sample_inv_xfm,   # [out] 
+                    init_xfm=prev_transform,        # [in]
+                    symmetric=symmetric,
+                    parameters=parameters,
+                    level=p['level'],
+                    start=start,
+                    work_dir=prefix,
+                    downsample=downsample,
+                )
 
                 inv_transforms.append(sample_inv_xfm)
                 fwd_transforms.append(sample_xfm)
 
-            # wait for jobs to finish
-            if it > skip and it < stop_early:
-                ray.get(transforms)
-
-            if cleanup and it > 1:
+            if it > 1:
                 # remove information from previous iteration
-                for s in corr_samples:
-                    s.cleanup()
-                for x in corr_transforms:
-                    x.cleanup()
+                [s.cleanup() for s in corr_samples]
+                [x.cleanup() for x in corr_transforms]
 
             # 2 average all transformations
             avg_inv_transform = MriTransform(name='avg_inv', prefix=it_prefix, iter=it)
-            if it > skip and it < stop_early:
-                result = average_transforms.remote(inv_transforms, avg_inv_transform, nl=True, symmetric=symmetric)
-                ray.get([result])
+            average_transforms(inv_transforms, avg_inv_transform, nl=True, symmetric=symmetric)
 
-            corr = []
-            corr_transforms = []
-            corr_samples = []
             # 3 concatenate correction and resample
+            corr_samples = []
+            corr_transforms = []
             for i, s in enumerate(samples):
                 c = MriDataset(prefix=it_prefix, iter=it, name=s.name)
                 x = MriTransform(name=s.name + '_corr', prefix=it_prefix, iter=it)
 
-                if it > skip and it < stop_early:
-                    corr.append(
-                        concat_resample_nl.remote(
-                            s,
-                            fwd_transforms[i],
-                            avg_inv_transform,
-                            c,
-                            x,
-                            current_model,
-                            level=p['level'],
-                            symmetric=symmetric,
-                            qc=qc,
-                        )
-                    )
+                concat_resample_nl(
+                    s,
+                    fwd_transforms[i],
+                    avg_inv_transform,
+                    c,
+                    x,
+                    current_model,
+                    level=p['level'],
+                    symmetric=symmetric,
+                    qc=False,
+                )
                 corr_transforms.append(x)
                 corr_samples.append(c)
 
-            if it > skip and it < stop_early:
-                ray.get(corr)
-
             # cleanup transforms
-            if cleanup:
-                for x in inv_transforms:
-                    x.cleanup()
-                for x in fwd_transforms:
-                    x.cleanup()
-                avg_inv_transform.cleanup()
+            [x.cleanup() for x in inv_transforms]
+            [x.cleanup() for x in fwd_transforms]
+            avg_inv_transform.cleanup()
 
             # 4 average resampled samples to create new estimate
-            if it > skip and it < stop_early:
-                result = average_samples.remote(
-                    corr_samples,   # [input]
-                    next_model,     # [output]
-                    next_model_sd,  # [output]
-                    symmetric=symmetric,
-                    symmetrize=symmetric,
-                    median=use_median,
-                )
-                ray.get([result])
+            average_samples(
+                corr_samples,   # [in]
+                next_model,     # [out]
+                next_model_sd,  # [out]
+                symmetric=symmetric,
+                symmetrize=symmetric,
+                median=use_median,
+            )
 
-            if cleanup and it > 1:
-                # remove previous template estimate
+            # remove previous template estimate
+            if it > 1:
                 models.append(next_model)
                 models_sd.append(next_model_sd)
 
             current_model = next_model
             current_model_sd = next_model_sd
 
-            if it > skip and it < stop_early:
-                result = average_stats.remote(next_model, next_model_sd)
-                sd.append(result)
+            result = average_stats(next_model, next_model_sd)
+            sd.append(result)
 
     # copy output to the destination
-    ray.wait(sd, num_returns=len(sd))
     with open(prefix + os.sep + 'stats.txt', 'w') as f:
         for s in sd:
             f.write("{}\n".format(ray.get(s)))
@@ -246,19 +199,13 @@ def generate_nonlinear_average(
         'samples': samples,
     }
 
-    with open(prefix + os.sep + 'results.json', 'w') as f:
-        json.dump(results, f, indent=1, cls=MRIEncoder)
+    # keep the final model
+    models.pop()
+    models_sd.pop()
 
-    if cleanup and stop_early == 100000:
-        # keep the final model
-        models.pop()
-        models_sd.pop()
-
-        # delete unneeded models
-        for m in models:
-            m.cleanup()
-        for m in models_sd:
-            m.cleanup()
+    # delete unneeded models
+    [m.cleanup() for m in models]
+    [m.cleanup() for m in models_sd]
 
     return results
 
