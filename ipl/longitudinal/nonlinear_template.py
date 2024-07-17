@@ -26,8 +26,7 @@ def pipeline_lngtemplate(patient):
 
     # @ todo check if processing was already performed
 
-    outputImages = [patient.template['nl_template'],
-                    patient.template['nl_template_mask']]
+    outputImages = [patient.template['nl_template'], patient.template['nl_template_mask']]
                     
     for (i, tp) in patient.items():
         outputImages.append(tp.lng_xfm['t1'])
@@ -69,7 +68,7 @@ def lngtemplate_v11(patient):
                  'biascorr':biascorr }
 
         if patient.fast:  # apply fast mode
-            options['protocol']=[{'iter':1,'level':16},{'iter':2,'level':8}]
+            options['protocol'] = [{'iter':1,'level':16},{'iter':2,'level':8}]
 
         samples= [ [tp.stx2_mnc['t1'], tp.stx2_mnc['masknoles']]
                         for (i, tp) in patient.items()]

@@ -612,8 +612,7 @@ def non_linear_register_full(
     """
     with ipl.minc_tools.mincTools() as minc:
 
-      if not minc.checkfiles(inputs=[source,target], 
-                              outputs=[output_xfm]):
+      if not minc.checkfiles(inputs=[source,target], outputs=[output_xfm]):
           return
 
       if parameters is None:
@@ -701,14 +700,12 @@ def non_linear_register_full(
       s_base=os.path.basename(sources[0]).rsplit('.gz',1)[0].rsplit('.mnc',1)[0]
       t_base=os.path.basename(targets[0]).rsplit('.gz',1)[0].rsplit('.mnc',1)[0]
 
-      
       # figure out what to do here:
       with ipl.minc_tools.cache_files(work_dir=work_dir,context='reg') as tmp:
           # a fitting we shall go...
           (sources_lr, targets_lr, source_mask_lr, target_mask_lr)=minc.downsample_registration_files(sources, targets, source_mask, target_mask, downsample)
           
-          for (i,c) in enumerate(parameters['conf']):
-
+          for (i, c) in enumerate(parameters['conf']):
               if   c['step']>start:
                   continue
               elif c['step']<level:
@@ -736,7 +733,6 @@ def non_linear_register_full(
                             minc.blur(targets_lr[s_],tmp_target,gmag=(c['blur']=='dxyz'), fwhm=c['blur_fwhm'])
                         tmp_sources.append(tmp_source)
                         tmp_targets.append(tmp_target)
-
 
               # set up registration
               args =['minctracc', tmp_sources[0],tmp_targets[0],'-clobber', 
@@ -775,9 +771,7 @@ def non_linear_register_full(
               # add files and run registration
               args.append(tmp_xfm)
 
-              minc.command([str(ii) for ii in args],
-                              inputs=[tmp_source,tmp_target],
-                              outputs=[tmp_xfm] )
+              minc.command([str(ii) for ii in args], inputs=[tmp_source,tmp_target], outputs=[tmp_xfm] )
 
               prev_xfm  = tmp_xfm
               prev_grid = tmp_grid

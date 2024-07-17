@@ -50,8 +50,6 @@ def generate_nonlinear_average(
     corr_transforms = []
 
     protocol = options.get('protocol', [{'iter': 4, 'level': 32}, {'iter': 4, 'level': 32}])
-
-    cleanup = options.get('cleanup', False)
     symmetric = options.get('symmetric', False)
     parameters = options.get('parameters', None)
     downsample_ = options.get('downsample', None)
@@ -66,7 +64,6 @@ def generate_nonlinear_average(
         if not os.path.exists(flipdir):
             os.makedirs(flipdir)
 
-        flip_all = []
         # generate flipped versions of all scans
         for i, s in enumerate(samples):
             _s_name = os.path.basename(s.scan).rsplit('.gz', 1)[0]
@@ -75,9 +72,7 @@ def generate_nonlinear_average(
             if s.mask is not None:
                 s.mask_f = prefix + os.sep + 'flip' + os.sep + 'mask_' + _s_name
 
-            flip_all.append(generate_flip_sample.remote(s))
-
-        ray.get(flip_all)
+            generate_flip_sample(s)
 
     # go through all the iterations
     it = 0
@@ -106,10 +101,7 @@ def generate_nonlinear_average(
                 sample_xfm = MriTransform(name=s.name, prefix=it_prefix, iter=it)
                 sample_inv_xfm = MriTransform(name=s.name + '_inv', prefix=it_prefix, iter=it)
 
-                prev_transform = None
-
-                if it > 1:
-                    prev_transform = corr_transforms[i]
+                prev_transform = corr_transforms[i] if it > 1 else None
 
                 non_linear_register_step(
                     s,              # [in]
@@ -128,11 +120,6 @@ def generate_nonlinear_average(
                 inv_transforms.append(sample_inv_xfm)
                 fwd_transforms.append(sample_xfm)
 
-            if it > 1:
-                # remove information from previous iteration
-                [s.cleanup() for s in corr_samples]
-                [x.cleanup() for x in corr_transforms]
-
             # 2 average all transformations
             avg_inv_transform = MriTransform(name='avg_inv', prefix=it_prefix, iter=it)
             average_transforms(inv_transforms, avg_inv_transform, nl=True, symmetric=symmetric)
@@ -145,11 +132,11 @@ def generate_nonlinear_average(
                 x = MriTransform(name=s.name + '_corr', prefix=it_prefix, iter=it)
 
                 concat_resample_nl(
-                    s,
-                    fwd_transforms[i],
-                    avg_inv_transform,
-                    c,
-                    x,
+                    s,                      # [in] sample
+                    fwd_transforms[i],      # [in] transform
+                    avg_inv_transform,      # [in] transform
+                    c,                      # [out] corrected_sample
+                    x,                      # [out] corrected_transform
                     current_model,
                     level=p['level'],
                     symmetric=symmetric,
@@ -158,16 +145,11 @@ def generate_nonlinear_average(
                 corr_transforms.append(x)
                 corr_samples.append(c)
 
-            # cleanup transforms
-            [x.cleanup() for x in inv_transforms]
-            [x.cleanup() for x in fwd_transforms]
-            avg_inv_transform.cleanup()
-
             # 4 average resampled samples to create new estimate
             average_samples(
-                corr_samples,   # [in]
-                next_model,     # [out]
-                next_model_sd,  # [out]
+                corr_samples,       # [in]
+                next_model,         # [out]
+                next_model_sd,      # [out]
                 symmetric=symmetric,
                 symmetrize=symmetric,
                 median=use_median,
@@ -187,7 +169,7 @@ def generate_nonlinear_average(
     # copy output to the destination
     with open(prefix + os.sep + 'stats.txt', 'w') as f:
         for s in sd:
-            f.write("{}\n".format(ray.get(s)))
+            f.write("{}\n".format(s))
 
     results = {
         'model': current_model,

@@ -97,17 +97,15 @@ def concat_resample_nl(
     """apply correction transformation and resample input"""
     try:
         with mincTools() as m:
-            tfm=input_transform.xfm
+            tfm = input_transform.xfm
             if corr_transform is not None:
                 m.xfmconcat([input_transform.xfm, corr_transform.xfm], m.tmp('transform.xfm'))
                 tfm=m.tmp('transform.xfm')
-            ref=None
-            if isinstance(model, MriDatasetRegress): ref=model.volume[0]
-            else: ref=model.scan
-            
-            m.xfm_normalize( tfm, ref, output_transform.xfm, 
-                             step=level)
-            
+
+            ref = model.volume[0] if isinstance(model, MriDatasetRegress) else model.scan
+
+            m.xfm_normalize(tfm, ref, output_transform.xfm, step=level)
+
             m.resample_smooth(input_mri.scan, output_mri.scan, 
                               transform=output_transform.xfm, 
                               like=ref,
@@ -120,12 +118,11 @@ def concat_resample_nl(
                                 like=ref,
                                 invert_transform=invert_transform)
                 if qc:
-                    m.qc(output_mri.scan,output_mri.scan+'.jpg',
-                         mask=output_mri.mask)
+                    m.qc(output_mri.scan,output_mri.scan+'.jpg', mask=output_mri.mask)
             else:
                 if qc:
                     m.qc(output_mri.scan,output_mri.scan+'.jpg')
-            
+
             if symmetric:
                 tfm_f=input_transform.xfm_f
                 if corr_transform is not None:
@@ -133,8 +130,7 @@ def concat_resample_nl(
                     tfm_f=m.tmp('transform_f.xfm')
                 m.xfm_normalize( tfm_f, ref, output_transform.xfm_f, step=level )
                 m.resample_smooth(input_mri.scan_f, output_mri.scan_f, transform=output_transform.xfm_f, 
-                                  like=ref,
-                                  invert_transform=invert_transform )
+                                  like=ref, invert_transform=invert_transform )
                 
                 if input_mri.mask and output_mri.mask:
                     m.resample_labels(input_mri.mask_f, 

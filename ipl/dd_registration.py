@@ -186,10 +186,9 @@ def non_linear_register_dd(
     """perform incremental non-linear registration with diffeomorphic demons"""
     
     with ipl.minc_tools.mincTools() as minc:
-        if not minc.checkfiles(inputs=[source,target],
-                                outputs=[output_xfm]):
+        if not minc.checkfiles(inputs=[source,target], outputs=[output_xfm]):
             return
-        
+
         if parameters is None:
             parameters={'conf':{},
                         'smooth_update':2,
@@ -198,7 +197,6 @@ def non_linear_register_dd(
                         'grad_type':0,
                         'max_step':2.0,
                         'hist_match':True } 
-            
             
         source_lr=source
         target_lr=target

@@ -179,7 +179,7 @@ def linear_register_step(
                     
                     xfmavg([_out_xfm,m.tmp('double_flipped.xfm')],output.xfm)
                     m.xfmconcat([m.tmp('flip_x.xfm'), output.xfm , m.tmp('flip_x.xfm')], output.xfm_f )
-                    
+
             else:
                 ipl.registration.linear_register(
                     scan,
@@ -201,7 +201,7 @@ def linear_register_step(
                     )
             if output_invert is not None:
                 m.xfminvert(output.xfm, output_invert.xfm)
-                
+
                 if symmetric:
                     m.xfminvert(output.xfm_f, output_invert.xfm_f)
 
@@ -297,8 +297,7 @@ def non_linear_register_step(
                         m.xfm_normalize(m.tmp('forward_f.xfm'),model.scan,output.xfm_f,step=level)
                 
             else:
-                if m.checkfiles(inputs=[sample.scan,model.scan],
-                                outputs=[output.xfm]):
+                if m.checkfiles(inputs=[sample.scan,model.scan], outputs=[output.xfm]):
 
                     ipl.registration.non_linear_register_full(
                         sample.scan,
@@ -319,7 +318,7 @@ def non_linear_register_step(
                 m.xfm_normalize(m.tmp('forward.xfm'),model.scan,output_invert.xfm,step=level,invert=True)
                 if symmetric:
                     m.xfm_normalize(m.tmp('forward_f.xfm'),model.scan,output_invert.xfm_f,step=level,invert=True)
-                    
+
         return True
     except mincError as e:
         print("Exception in non_linear_register_step:{}".format(str(e)) )
@@ -361,9 +360,7 @@ def dd_register_step(
                 _init_xfm_f=init_xfm.xfm_f
         
         with mincTools(verbose=verbose) as m:
-            
             if symmetric:
-
                 if m.checkfiles(inputs=[sample.scan,model.scan,sample.scan_f],
                                 outputs=[output.xfm,output.xfm_f]):
                     
@@ -596,7 +593,6 @@ def elastix_register_step(
             out=m.tmp('forward')
             out_f=m.tmp('forward_f')
             if symmetric:
-
                 if m.checkfiles(inputs=[sample.scan,model.scan,sample.scan_f],
                                 outputs=[output.xfm, output.xfm_f]):
                     
@@ -640,11 +636,8 @@ def elastix_register_step(
                     else:
                         m.xfm_normalize(out+'.xfm',  model.scan,output.xfm,  step=level)
                         m.xfm_normalize(out_f+'.xfm',model.scan,output.xfm_f,step=level)
-
             else:
-                if m.checkfiles(inputs=[sample.scan,model.scan],
-                                outputs=[output.xfm]):
-
+                if m.checkfiles(inputs=[sample.scan,model.scan], outputs=[output.xfm]):
                     ipl.elastix_registration.register_elastix(
                         sample.scan,
                         model.scan,
@@ -663,7 +656,6 @@ def elastix_register_step(
                 m.xfm_normalize(out+'.xfm',model.scan,output_invert.xfm,step=level,invert=True)
                 if symmetric:
                     m.xfm_normalize(out_f+'.xfm',model.scan,output_invert.xfm_f,step=level,invert=True)
-                    
         return True
     except mincError as e:
         print("Exception in elastix_register_step:{}".format(str(e)) )

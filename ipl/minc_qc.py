@@ -66,6 +66,7 @@ def max_blend(si,so):
     """
     return np.maximum(si,so)
 
+
 def over_blend(si,so, ialpha, oalpha):
     """
     Perform over-blending, non-transparanet overaly takes over the image
@@ -176,7 +177,6 @@ def qc(
         
         if mask_bg is not None:
             _odata=ma.masked_less(_odata, mask_bg)
-    
 
     if crop is not None:
         # apply cropping here
@@ -212,7 +212,7 @@ def qc(
     scalarMap  = cmx.ScalarMappable(norm=cNorm, cmap=cm)
     oscalarMap = cmx.ScalarMappable(norm=oNorm, cmap=cmo)
     aspects = []
-    
+
     # axial slices
     for j in range(0, samples):
         i=int(10+(150.0-10.0)*j/(samples-1))

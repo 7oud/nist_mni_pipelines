@@ -250,7 +250,6 @@ def non_linear_register_ants2(
         start=level
     
     with ipl.minc_tools.mincTools(verbose=verbose) as minc:
-
         sources = []
         targets = []
         
@@ -380,10 +379,10 @@ def non_linear_register_ants2(
         if convert_grid is not None:
             outputs=[output_tmp]
         else:
-            outputs=[output_xfm ] # TODO: add inverse xfm ?
+            outputs=[output_xfm] # TODO: add inverse xfm ?
         
         #print(">>>\n{}\n>>>>".format(' '.join(cmd)))
-        
+
         minc.command(cmd, inputs=inputs, outputs=outputs)
 
         if convert_grid is not None:
